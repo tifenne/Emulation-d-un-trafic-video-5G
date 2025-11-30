@@ -1,382 +1,190 @@
-# NexSlice: Towards an Open and Reproducible Network Slicing Testbed for 5G and Beyond
+# Emulation-d-un-trafic-vidéo-5G
+NexSlice - Emulation d'un trafic vidéo 5G
 
-<div align="center">
-    <img src="fig/aidyf2n.png" alt="AIDY-F2N">
-</div>
+**Projet**: 2
+**Groupe**: 4  
+**Étudiants**: Tifenne Jupiter, Emilie Melis, Eya Walha  
+**Année**: 2025-2026
 
-## Citation
-This work has been accepted as a demo paper at The 27th International Conference on Modeling, Analysis and Simulation of Wireless and Mobile Systems (MSWiM 2025), Barcelona, Spain, October 27th – 31st, 2025
+## Introduction
 
-If you use NexSlice in your research or experiments, please cite our paper once it is published in IEEE (The official DOI and link will be added here upon publication).
+### Contexte
 
-## Overview
+La 5G introduit le **Network Slicing**, permettant de créer des réseaux virtuels logiques sur une infrastructure physique commune. Chaque slice peut être optimisé pour des cas d'usage spécifiques:
 
-**NexSlice** is a modular, open-source testbed for 5G core network slicing built natively on Kubernetes. It supports scalable slice instantiation using open-source components such as **OpenAirInterface (OAI)** and **UERANSIM**, and integrates both monolithic and disaggregated RANs.
+- **eMBB (SST=1)**: Enhanced Mobile Broadband → Streaming vidéo, haute débit
+- **URLLC (SST=2)**: Ultra-Reliable Low Latency → Applications critiques
+- **mMTC (SST=3)**: Massive Machine Type Communications → IoT massif
 
+**Comment valider et mesurer la qualité de service (QoS) du streaming vidéo à travers un slice 5G eMBB dans un environnement simulé ?**
 
+---
 
-This repository contains Helm charts and deployment scripts for:
-- OAI 5G SA Core
-- OAI disaggregated CU/DU RAN with NR-UEs
-- UERANSIM simulator for gNBs and UEs
-- Monitoring via **Prometheus**, **Grafana**, and **Lens**
+## Objectifs
 
-Slicing is implemented by mapping UEs to unique **S-NSSAI** identifiers (SST, SD), with dedicated SMF/UPF instances per slice and shared AMF/NSSF/AUSF/UDM/UDR. This setup enables reproducible experiments across isolated, service-tailored network slices (eMBB, URLLC, etc.).
+Notre projet s'appuie sur l'infrastructure **NexSlice** ([lien GitHub](https://github.com/AIDY-F2N/NexSlice/tree/k3s)) qui fournit un Core 5G OAI complet déployé sur Kubernetes.
+L’objectif est de déployer un serveur vidéo (FFmpeg + nginx) sur Kubernetes et de réaliser des tests de streaming vidéo sur le slice eMBB (SST = 1). Cela permettra de mesurer les performances réseau (latence, débit, jitter), de capturer et d’analyser le trafic afin de confirmer le routage via l’UPF, et de mettre en place une supervision en temps réel avec Prometheus et Grafana. Cette supervision inclura la création de tableaux de bord pour visualiser les métriques 5G et l’automatisation de l’export de ces métriques vers Prometheus.
 
-![Slicing](fig/NexSlice.png)
+---
 
-## Table of Contents
+## État de l'Art
 
-- [Build a K3s cluster](#build-a-k3s-cluster)
-- [Tools Setup](#tools-setup)
-- [OAI 5G SA Core Deployment](#oai-5g-sa-core-deployment)
-- [5G RANs Deployments](#ueransim)
-- [Monitoring](#monitoring)
-- [Tests](#generate-traffic-using-iperf3)
-- [Clean the cluster](#clean-the-cluster)
+### 1. Contexte général
+
+Avec la 5G, le Network Slicing permet de découper le réseau en plusieurs tranches dédiées à différents usages (eMBB, URLLC, mMTC). Les outils classiques comme ping ou iperf3 mesurent surtout la latence ou le débit, mais ne reflètent pas vraiment le comportement réel d'applications comme le streaming vidéo HD.
 
 
-# Build a K3S cluster
-K3S is a lightweight, certified Kubernetes distribution designed for production workloads in resource-constrained environments.  
-It packages all the essential Kubernetes components into a single binary, reduces memory footprint, and simplifies cluster setup.  
-K3S is ideal for edge computing, IoT, labs, or single-node clusters, while remaining fully compatible with standard Kubernetes APIs and tools. You can find more in : https://docs.k3s.io/
+C'est pourquoi de nombreux travaux cherchent aujourd'hui à mieux émuler ou analyser un trafic vidéo réaliste, afin d'évaluer l'impact du slicing sur les performances et la qualité perçue par l'utilisateur.
 
+### 2. Expérimentations vidéo dans des environnements 5G
 
-## Requirements
-- Architecture: **AMD64 (x86_64)**
-- A Linux distribution (tested on **Ubuntu 24.04**) running on a physical machine or virtual machine.
-- **Sudo privileges**  
-- **UFW (Uncomplicated Firewall)** must be disabled on k3s server and agents:
-```bash
-sudo ufw disable
+Des expérimentations récentes menées avec la pile OpenAirInterface (OAI) et des UEs virtuels montrent comment le débit, la latence et la stabilité vidéo interagissent, et proposent des méthodologies adaptées à des plateformes entièrement virtualisées comme NexSlice (source 1).
+
+D'autres démonstrations autour de la vidéosurveillance en temps réel mettent en avant la capacité du slicing à réduire la latence et stabiliser le flux, illustrant l'intérêt de cette approche pour des services exigeants comme les flux eMBB (source 7).
+
+### 3. Modélisation et estimation de la QoE
+
+Plusieurs travaux proposent des modèles reliant les métriques réseau (débit, latence, pertes) à la QoE, ce qui permet d'interpréter les performances du réseau du point de vue de l'utilisateur final (source 3).
+
+D'autres recherches se focalisent sur la vidéo Ultra-HD, en utilisant des indicateurs tels que PSNR, SSIM ou VMAF pour mieux caractériser la qualité perçue (source 5).
+
+Des méthodes d'adaptation basées sur MPEG-DASH, associées à l'évaluation automatique de l'image, offrent également des pistes pour configurer efficacement des pipelines vidéo comme GStreamer dans un contexte eMBB (source 10).
+
+### 4. Adaptation dynamique et optimisation énergétique
+
+Des architectures intégrant la virtualisation des fonctions réseau montrent qu'il est possible d'adapter la qualité vidéo en tenant compte à la fois de la QoE et de la consommation énergétique. Ces approches s'inscrivent dans la même logique que NexSlice, qui cherche à orchestrer intelligemment les ressources selon la demande (source 2).
+
+### 5. Fiabilité et résilience du streaming en 5G
+
+Des études menées sur les réseaux à ondes millimétriques mettent en avant l'intérêt de la multi-connectivité et du network coding pour stabiliser le débit et réduire la variabilité du flux (source 6).
+
+D'autres analyses montrent aussi que la congestion dans la RAN influence directement la lecture vidéo (par exemple via QUIC), en provoquant des interruptions liées aux files d'attente radio — un phénomène qu'il est possible de reproduire dans un environnement émulé comme OAI/NexSlice (source 9).
+
+### 6. Slicing orienté QoE et isolation des services
+
+Certaines architectures récentes de RAN slicing sont conçues pour optimiser la QoE et garantir une isolation stricte entre services. Elles insistent sur la nécessité de corréler automatiquement les métriques réseau et les indicateurs de qualité perçue afin d'allouer les ressources au bon moment. Ce principe rejoint directement les objectifs du slice eMBB dans NexSlice (source 8).
+
+### 7. Apprentissage automatique et prédiction de la QoE
+
+Des travaux s'appuyant sur le Machine Learning montrent qu'il est possible de prédire la QoE vidéo à partir de paramètres mesurés en temps réel (débit, gigue, rebuffering, pertes). Ces approches ouvrent la voie à une orchestration proactive du slicing, capable d'anticiper les besoins de qualité. Elles sont transférables au fonctionnement de NexSlice (source 4).
+
+### 8. Synthèse et positionnement
+
+L'ensemble des recherches met en évidence plusieurs tendances fortes :
+
+- L'utilisation croissante d'environnements virtualisés (OAI, UEs logiciels) pour tester des flux vidéo réalistes
+- La nécessité de combiner mesures réseau (QoS) et qualité perçue (QoE)
+- L'intérêt d'utiliser de vrais pipelines vidéo (VLC, GStreamer) pour reproduire fidèlement les comportements clients
+- Le développement d'approches de slicing orientées QoE, parfois couplées au Machine Learning
+
+Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un trafic vidéo applicatif dans une infrastructure OAI virtualisée, il permet d'étudier précisément comment le slicing influence la performance et la qualité perçue. Cela constitue une avancée importante vers une évaluation plus réaliste et automatisée des services eMBB.
+
+---
+
+## Architecture
+
+### Vue d'Ensemble
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Infrastructure NexSlice (Fournie par le Prof)                        │
+│                                                                       │
+│ ┌────────────────────────────────────────────────────────┐          │
+│ │ Core 5G OAI (Kubernetes - namespace nexslice)          │          │
+│ │ AMF │ SMF │ UPF │ NRF │ AUSF │ UDM │ PCF │ UDR         │          │
+│ └──────────────────┬─────────────────────────────────────┘          │
+│                    │                                                 │
+│         ┌──────────┴──────────┐                                     │
+│         │ gNB (UERANSIM)      │                                     │
+│         └──────────┬──────────┘                                     │
+│                    │                                                 │
+│         ┌──────────┴──────────┐                                     │
+│         │ UE (UERANSIM)       │                                     │
+│         │ Interface: uesimtun0│                                     │
+│         │ IP: 12.1.1.2        │                                     │
+│         │ Slice: SST=1 (eMBB) │                                     │
+│         └──────────┬──────────┘                                     │
+└────────────────────┼──────────────────────────────────────────────┘
+                     │
+                     │ Trafic 5G via tunnel
+                     │
+          ┌──────────▼──────────┐
+          │ UPF Gateway          │
+          │ 12.1.1.1             │
+          └──────────┬──────────┘
+                     │
+          ┌──────────▼──────────┐
+          │ Serveur Vidéo        │
+          │ FFmpeg + nginx       │
+          │ (Kubernetes Service) │
+          └──────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ Stack de Monitoring (Notre Contribution)                             │
+│                                                                       │
+│ ┌────────────────────────────────────────────────────────┐          │
+│ │ Namespace monitoring (Kubernetes)                       │          │
+│ │                                                          │          │
+│ │  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  │          │
+│ │  │ Prometheus  │◄─│ Pushgateway  │◄─│ Scripts Test │  │          │
+│ │  │   :30090    │  │    :30091    │  │  (export)    │  │          │
+│ │  └──────┬──────┘  └──────────────┘  └──────────────┘  │          │
+│ │         │                                               │          │
+│ │  ┌──────▼──────┐                                       │          │
+│ │  │  Grafana    │ ← Dashboard temps réel                │          │
+│ │  │   :30300    │   + Alertes configurables             │          │
+│ │  └─────────────┘                                       │          │
+│ └────────────────────────────────────────────────────────┘          │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-1. **Install K3S on the server:**
-```bash
-curl -sfL https://get.k3s.io | sh -
-```
+### Composants Utilisés
 
-Configure k3s:
+| Composant | Technologie | Rôle |
+|-----------|-------------|------|
+| **Core 5G** | OpenAirInterface (OAI) | Fonctions réseau 5G (AMF, SMF, UPF...) |
+| **RAN** | UERANSIM | Simulation gNB et UE |
+| **Orchestration** | Kubernetes (k3s) | Déploiement des services |
+| **Serveur Vidéo** | FFmpeg + nginx | Streaming vidéo HTTP |
+| **Monitoring** | Prometheus + Grafana | Collecte et visualisation des métriques |
+| **Export Métriques** | Pushgateway | Interface entre scripts et Prometheus |
+| **Namespace** | `nexslice`, `monitoring` | Isolation des ressources K8s |
 
-```bash
-mkdir -p ~/.kube
-sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-sudo chown $(id -u):$(id -g) ~/.kube/config
-```
+---
 
+### Fichier Vidéo de Test
 
-You can create a K3S cluster using just a single server node, or optionally add agent nodes for distributing workloads.
+- **URL**: http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+- **Format**: MP4 (H.264 + AAC)
+- **Taille**: ~158 MB
+- **Durée**: ~10 minutes
 
+---
 
-2. **Add agent nodes:** 
-**NOTE**: On the agent machines, disable UFW and join the agent to the K3s cluster. All remaining commands from this repository should be executed on the server machine.
+---
 
-```bash
-curl -sfL https://get.k3s.io | K3S_URL=https://<SERVER_IP>:6443 K3S_TOKEN=<NODE_TOKEN> sh -
-```
-- <MASTER_IP>: IP address of the server node using "ip a"
-- <NODE_TOKEN>: Retrieve from server with "sudo cat /var/lib/rancher/k3s/server/node-token"
+## Références
 
-3. **Check all nodes in the cluster:**
-```bash
-sudo k3s kubectl get nodes
-```
+[1] Agarwal, B. et al. (2023). Analysis of real-time video streaming and throughput performance using the OpenAirInterface stack on multiple UEs. IEEE CSCN.
 
-**Note**: Several screenshots were taken from the **main** branch of NexSlice, which uses standard kubectl commands. When running NexSlice on **k3s**, make sure to prepend "sudo k3s" to each kubectl command (unless it already works without it on your setup).
+[2] Nightingale, J. et al. (2016). QoE-Driven, Energy-Aware Video Adaptation in 5G Networks: The SELFNET Self-Optimisation Use Case.
 
-# Tools Setup
+[3] Baena, C. et al. (2020). Estimation of Video Streaming KQIs for Radio Access Negotiation in Network Slicing Scenarios.
 
-1.  Install the Helm CLI using this link: https://helm.sh/docs/intro/install/
+[4] Tiwari, V. et al. (2022). A QoE Framework for Video Services in 5G Networks with Supervised Machine Learning Approach.
 
-Helm CLI (Command-Line Interface) is a command-line tool used for managing applications on Kubernetes clusters. It is part of the Helm package manager, which helps you package, deploy, and manage applications as reusable units called Helm charts.
+[5] Aston Research Group (2018). 5G-QoE: QoE Modelling for Ultra-HD Video Streaming in 5G Networks.
 
-Helm provides a straightforward way to define, install, and upgrade complex Kubernetes applications. With Helm, you can define the desired state of your application using a declarative YAML-based configuration file called a Helm chart. A Helm chart contains all the necessary Kubernetes manifests, configurations, and dependencies required to deploy and run your application.
+[6] Drago, I. et al. (2017). Reliable Video Streaming over mmWave with Multi-Connectivity and Network Coding. arXiv.
 
-2.  Install Helm Spray using this command: 
-```bash[language=bash]
-helm plugin install https://github.com/ThalesGroup/helm-spray
-```
-Helm Spray is a Helm plugin that simplifies the deployment of Kubernetes applications using Helm charts. Helm is a package manager for Kubernetes that allows you to define, install, and manage applications as reusable units called charts. Helm Spray extends Helm's functionality by providing additional features and capabilities for managing the lifecycle of complex deployments. The command helm plugin install installs the Helm Spray plugin, enabling you to use its functionalities alongside Helm.
+[7] Pedreño Manresa, J. J. et al. (2021). A Latency-Aware Real-Time Video Surveillance Demo: Network Slicing for Improving Public Safety. OFC / arXiv.
 
-3. Clone Multus GitHub repository:
-```bash[language=bash]
-git clone https://github.com/k8snetworkplumbingwg/multus-cni.git
-```
-  - Apply a daemonset which installs Multus using kubectl. Apply the daemonset YAML file:
-    ```bash[language=bash]
-    sudo k3s kubectl apply -f multus-cni/deployments/multus-daemonset-thick.yml
-    ```
-4. Create nexslice namespace using the below command: 
-    ```bash[language=bash]
-    sudo k3s kubectl create namespace nexslice
-    ```
+[8] DeSlice Project (2023). An Architecture for QoE-Aware and Isolated RAN Slicing. Sensors.
 
-5. Clone this repository:
-```bash[language=bash]
-git clone -b k3s https://github.com/AIDY-F2N/NexSlice.git
-cd NexSlice/
-```
+[9] JSidhu, J. S. et al. (2025). From 5G RAN Queue Dynamics to Playback: A Performance Analysis for QUIC Video Streaming. arXiv.
 
-6. Install Metrics Server:
-To enable auto-scaling features like HPA (Horizontal Pod Autoscaler), deploy the Kubernetes metrics server:
-```bash[language=bash]
-sudo k3s kubectl apply -f metricserver.yaml
-```
+[10] Kanai, K. et al. (Université Waseda). Methods for Adaptive Video Streaming and Picture Quality Assessment to Improve QoS/QoE Performances.
 
+---
+Ce projet est développé dans le cadre d'un projet académique à Telecom SudParis.
 
-# OAI 5G SA Core Deployment
-1. Open a terminal inside the folder "NexSlice" and run the following commands to deploy the 5g core:
-```bash[language=bash]
-helm dependency update 5g_core/oai-5g-advance/
-helm install 5gc 5g_core/oai-5g-advance/ -n nexslice
-```
-These commands update chart dependencies and deploy the full OAI 5G SA Core into your cluster.
 
-To confirm the deployment status of the core components:
-```bash[language=bash]
-sudo k3s kubectl get pods -n nexslice 
-```
-
-<div align="center">
-    <img src="fig/5gc.png" alt="AIDY-F2N">
-</div>
-
-
-# Radio Access Networks (RANs)
-NexSlice supports the deployment of two types of 5G RANs: the disaggregated OpenAirInterface (OAI) RAN and the simulated UERANSIM RAN. These deployments allow testing slicing capabilities in both realistic and emulated environments.
-
-## OAI Disaggregated 5G RAN
-This setup launches the OAI RAN components—CU-CP, CU-UP, and DU—with support for SST-based slicing (e.g., SST 1–3). It also deploys multiple OAI NR-UEs, each assigned to a specific slice. 
-
-Deploy the components ONE AT A TIME, waiting a few seconds between each step to allow proper initialization.
-
-```bash[language=bash]
-helm install cucp 5g_ran/dis_ran_gnb1/oai-cu-cp/ -n nexslice
-helm install cuup 5g_ran/dis_ran_gnb1/oai-cu-up -n nexslice
-helm install du 5g_ran/dis_ran_gnb1/oai-du -n nexslice
-
-helm install nrue1 5g_ran/oai-nr-ue1 -n nexslice 
-helm install nrue2 5g_ran/oai-nr-ue2 -n nexslice
-
-sudo k3s kubectl get pods -n nexslice | grep -E 'cu-cp|cu-up|du|nr-ue'
-```
-
-You can verify that NR-UEs received an IP address using:
-
-```bash[language=bash]
-sudo k3s kubectl exec -it -n nexslice -c nr-ue $(sudo k3s kubectl get pods -n nexslice | grep oai-nr-ue | awk '{print $1}') -- ifconfig oaitun_ue1 |grep -E '(^|\s)inet($|\s)' | awk {'print $2'}
-sudo k3s kubectl exec -it -n nexslice -c nr-ue $(sudo k3s kubectl get pods -n nexslice | grep oai-nr-ue2 | awk '{print $1}') -- ifconfig oaitun_ue1 |grep -E '(^|\s)inet($|\s)' | awk {'print $2'}
-```
-To confirm successful connection to the Internet:
-
-```bash[language=bash]
-sudo k3s kubectl exec -it -n nexslice -c nr-ue $(sudo k3s kubectl get pods -n nexslice | grep oai-nr-ue | awk '{print $1}') -- ping -I oaitun_ue1 -c4 google.fr
-sudo k3s kubectl exec -it -n nexslice -c nr-ue $(sudo k3s kubectl get pods -n nexslice | grep oai-nr-ue2 | awk '{print $1}') -- ping -I oaitun_ue1 -c4 google.fr
-```
-
-<div align="center">
-    <img src="fig/dis-ran.png" alt="OAI-RAN">
-</div>
-
-## UERANSIM Deployment
-
-UERANSIM (User Equipment and RAN Simulator) is an open-source 5G simulator that emulates both the gNB and UE functionalities. It enables testing mobility, session setup, slicing behavior, and QoS in a lightweight environment.
-
-Deploy the components ONE AT A TIME, waiting a few seconds between each step to allow proper initialization.
-
-```bash[language=bash]
-helm install ueransim-gnb 5g_ran/ueransim-gnb2/ -n nexslice
-
-helm install ueransim-ue1 5g_ran/ueransim-ue1/ -n nexslice
-helm install ueransim-ue2 5g_ran/ueransim-ue2/ -n nexslice
-helm install ueransim-ue3 5g_ran/ueransim-ue3/ -n nexslice
-```
-
-Check running pods:
-
-```bash[language=bash]
-sudo k3s kubectl get pods -n nexslice | grep ueransim
-sudo k3s kubectl logs -n nexslice <ueransim-gnb name> 
-```
-<div align="center">
-    <img src="fig/ueransim.png" alt="OAI-RAN">
-</div>
-
-View logs:
-
-```bash[language=bash]
-sudo k3s kubectl logs -n nexslice <ueransim-ue name>
-```
-<div align="center">
-    <img src="fig/ueransim2.png" alt="OAI-RAN">
-</div>
-The same command can be used to test other UEs
-
-Test data session by pinging from a UE:
-
-```bash[language=bash]
-sudo k3s kubectl exec -it -n nexslice <ueransim-ue name> -- ping -c 3 -I uesimtun0 google.com
-```
-
-<div align="center">
-    <img src="fig/ueransim3.png" alt="OAI-RAN">
-</div>
-The same command can be used to test other UEs
-
-## SST-Based Slicing
-
-UEs connect to different slices based on their selected SSTs, each receiving an IP from a distinct subnet linked to a specific DNN.
-
-<div align="center">
-    <img src="fig/slicing.png" alt="OAI-RAN">
-</div>
-
-# Monitoring
-To enable observability of the system, NexSlice integrates Prometheus for metrics collection and Grafana for real-time visualization of the cluster, network slices, and VNF behavior.
-
-```bash[language=bash]
-sudo k3s kubectl create ns monitoring
-helm install monitoring monitoring/ -n monitoring
-```
-
-Now you should be able to access the Grafana dashboard. You can use port forwarding using the following command (Replace <grafana-pod-name> by the name of your grafana pod )
-
-```bash[language=bash]
-sudo k3s kubectl get pods -n monitoring
-sudo k3s kubectl port-forward -n monitoring <grafana-pod-name> 3000 &
-```
-
-<div align="center">
-    <img src="fig/monitoring.png" alt="OAI-RAN">
-</div>
-
-
-Make sure the port is allowed in the firewall to be accessed from your workstation.
-
-You will be able to access Grafana from http://localhost:3000
-```bash[language=bash]
-User: admin
-Password: prom-operator
-```
-
-<div align="center">
-    <img src="fig/grafana.png" alt="OAI-RAN">
-</div>
-
-Go to Dashboards and click on it — you’ll find multiple dashboards covering the entire cluster, nodes, pods, etc. When selecting a dashboard, make sure to choose the correct namespace if applicable (**not default** — use NexSlice instead), and then select the pod whose resources you want to monitor.
-
-## Lens UI
-Once your cluster is ready, use Lens — a powerful Kubernetes IDE — to manage your cluster visually instead of using `kubectl` in the CLI.
-
-1. **Download Lens**: [https://k8slens.dev/download](https://k8slens.dev/download)  
-2. **Launch the application.**  
-3. Lens will automatically detect your kubeconfig file (`~/.kube/config`).  
-4. Click **“Add Cluster”** and select your cluster from the list.  
-5. You're ready to view **workloads, logs, nodes, CPU/memory usage**, and much more — all in a visual interface.
-
-<div align="center">
-    <img src="fig/ui.png" alt="Lens">
-</div>
-
-# Advanced Tests: Scaling UEs and Measuring Throughput
-NexSlice enables large-scale experimentation with slicing and traffic generation using UERANSIM. Below we describe how to deploy and test 100 simultaneous UEs.
-
-1. If UERANSIM gNB or UEs are already running, uninstall them:
-```bash[language=bash]
-helm ls -n nexslice
-helm uninstall -n nexslice <ueransim-gnb> <ueransim-ue1> ...
-```
-
-2. Here's a simple way to deploy a large number of UEs. Enable UE creation and set the number of UEs to 100:
-
-```bash[language=bash]
-helm install ueransim-gnb 5g_ran/ueransim-gnb2/ -n nexslice \
-  --set ues.enabled=true \
-  --set ues.count=100 
-```
-
-This will create two pods: one containing the ueransim-gnb, and the other hosting all the UEs.
-```bash[language=bash]
-sudo k3s kubectl get pods -n nexslice | grep ueransim
-```
-
-<div align="center">
-    <img src="fig/100ues.png" alt="AIDY-F2N">
-</div>
-
-You can verify the deployment either by checking the logs of ueransim-gnb or by accessing the UE pod to view the interfaces from uesimtun0 to uesimtun99. Each should have an IP address and be able to ping:
-
-```bash[language=bash]
-sudo k3s kubectl logs -n nexslice <ueransim-gnb-pod-name>
-sudo k3s kubectl exec -n nexslice <ueransim-ues-pod-name> -- ip a
-sudo k3s kubectl exec -n nexslice <ueransim-ues-pod-name> -- ping -c 4 -I uesimtun0 google.com
-```
-
-<div align="center">
-    <img src="fig/100ues_test.png" alt="AIDY-F2N">
-</div>
-
-## Ping Traffic Test
-
-Use the provided script to send ping requests from each UE:
-
-```bash[language=bash]
-chmod +x tests/ping.sh
-./tests/ping.sh 
-```
-All UEs will attempt to ping a target (e.g., google.com) from their respective virtual interfaces.
-
-## iPerf3 Throughput Test
-
-1. Deploy iperf3 server using the following command : 
-```bash[language=bash]
-sudo k3s kubectl run iperf3 --image=maitaba/iperf3:latest
-```
-
-iperf3 pod acts as server which is listening to 100 ports from 5201 to 5301. By default, the iPerf3 server will listen to all active interfaces of the host for new connections. 
-
-
-2.  Run the following script, UEs will act as clients to connect with the server (at most 100) and connect to an iperf3 server during 60 seconds.
-```bash[language=bash]
-chmod +x tests/iperf.sh
-./tests/iperf.sh 
-```
-
-<div align="center">
-    <img src="fig/iperf3.png" alt="AIDY-F2N">
-</div>
-
-Traffic generated via iPerf3 triggers UPF autoscaling, observable through Grafana dashboards, Lens UI, and the `kubectl` CLI.
-```bash[language=bash]
-sudo k3s kubectl get hpa -A
-```
-<div align="center">
-    <img src="fig/hpa.png" alt="OAI-RAN">
-</div>
-
-# Clean the cluster
-To remove resources (pods, deployments, Helm charts, etc.), you can proceed as follows:
-1. Delete Helm charts
-```bash[language=bash]
-helm ls -A   # List all Helm charts across namespaces
-helm uninstall <chartName> -n <namespace>
-```
-This applies to all deployed charts such as: 5gc, cuup, cucp, du, monitoring, nrue1, nrue2, ueransim-gnb, ueransim-ue1, ueransim-ue2, ueransim-ue3
-
-2. Delete resources applied with kubectl
-```bash[language=bash]
-sudo k3s kubectl delete -f <file> # Examples: metricserver.yaml, multus-cni/deployments/multus-daemonset-thick.yml
-```
-
-3. Remove a k3s agent (worker) node
-```bash[language=bash]
-sudo /usr/local/bin/k3s-agent-uninstall.sh
-```
-
-4. Remove the k3s server (control-plane) node
-```bash[language=bash]
-sudo /usr/local/bin/k3s-uninstall.sh
-```
-
-# Contact
-- Yasser BRAHMI, abdenour-yasser.brahmi@telecom-sudparis.eu
