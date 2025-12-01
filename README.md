@@ -290,11 +290,42 @@ sudo k3s kubectl exec -it <pod-ue> -n nexslice -- /home/ueransim/stream_video.sh
 
 ## 8. Monitoring – Grafana & Prometheus
 
-* **Grafana**
-  [http://172.26.157.4:30300/](http://172.26.157.4:30300/)
+### Visualiser les métriques dans Grafana
 
-* **Prometheus**
-  [http://172.26.157.4:30090/](http://172.26.157.4:30090/)
+1. **Port-forward Prometheus & Grafana**
+
+```bash
+kubectl port-forward svc/prometheus -n monitoring 30090:9090
+```
+```bash
+kubectl port-forward svc/grafana -n monitoring 30300:3000
+```
+Accéder à [http://localhost:30090](http://localhost:30090) et à [http://localhost:30300](http://localhost:30300) (`admin`/`admin`)
+
+
+2. **Ajouter Prometheus comme datasource**
+   URL : `http://prometheus.monitoring.svc.cluster.local:9090`
+   Puis cliquez sur "Save & Test". 
+
+4. **Vérifier les métriques Prometheus**
+
+```bash
+kubectl port-forward svc/prometheus -n monitoring 30090:9090
+```
+
+Rechercher : `video_chunk_latency_seconds`, `video_chunk_bandwidth_mbps`, `video_chunk_jitter_seconds`
+
+4. **Créer un dashboard Grafana**
+
+* Ajouter un panel par métrique, filtrer par UE si besoin :
+
+```promql
+video_chunk_latency_seconds{ue="ue1"}
+video_chunk_bandwidth_mbps{ue="ue1"}
+video_chunk_jitter_seconds{ue="ue1"}
+```
+
+* Ajuster axes et style, puis enregistrer.
 
 ---
 
