@@ -159,7 +159,51 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 - **Durée**: ~10 minutes
 
 ---
+### Déploiement 
 
+
+requis 
+sudo k3s kubectl exec -it ueransim-ue1-ueransim-ues-64d67cf8bd-7lqjz -n nexslice -- apt update
+sudo k3s kubectl exec -it ueransim-ue1-ueransim-ues-64d67cf8bd-7lqjz -n nexslice -- apt install -y bc
+
+
+
+sudo docker build -t ffmpeg-server:latest .
+sudo docker images | grep ffmpeg-server
+
+vérifier si le cluster k3s est prêt : sudo k3s kubectl get nodes / sudo k3s kubectl get ns
+
+chmod +x build_ffmpeg.sh
+./build_ffmpeg.sh
+
+
+Déployer le serveur 
+
+sudo k3s kubectl apply -f ffmpeg-server-deployment.yaml
+sudo k3s kubectl get pods -n nexslice | grep ffmpeg
+sudo k3s kubectl logs -n nexslice ffmpeg-server -f
+
+Test depuis un pod temporaire
+
+sudo k3s kubectl run test-client --image=ubuntu:22.04 -n nexslice -it --rm -- bash
+apt-get update && apt-get install -y curl
+curl -I http://ffmpeg-server.nexslice.svc.cluster.local:8080/videos/video.mp4
+
+configuration de l’UE
+sudo k3s kubectl get pods -n nexslice | grep ueransim-ue
+sudo k3s kubectl exec -it -n nexslice <nom-du-pod-ueransim-ue1> -- bash
+apt-get update && apt-get install -y curl
+ip addr show uesimtun0
+
+Emulation d'un flux vidéo 
+
+sudo k3s kubectl exec -it <pod-ue> -n nexslice -- mkdir -p /home/ueransim
+sudo k3s kubectl cp stream_video.sh nexslice/<pod-ue>:/home/ueransim/stream_video.sh
+sudo k3s kubectl exec -it <pod-ue> -n nexslice -- chmod +x /home/ueransim/stream_video.sh
+sudo k3s kubectl exec -it <pod-ue> -n nexslice -- /home/ueransim/stream_video.sh
+
+grafana : http://172.26.157.4:30300/
+promotheus : http://172.26.157.4:30090/
 ---
 
 ## Références
