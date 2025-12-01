@@ -304,10 +304,11 @@ Accéder à [http://localhost:30090](http://localhost:30090) et à [http://local
 
 
 2. **Ajouter Prometheus comme datasource**
+   
    URL : `http://prometheus.monitoring.svc.cluster.local:9090`
    Puis cliquez sur "Save & Test". 
 
-4. **Vérifier les métriques Prometheus**
+3. **Vérifier les métriques Prometheus**
 
 ```bash
 kubectl port-forward svc/prometheus -n monitoring 30090:9090
