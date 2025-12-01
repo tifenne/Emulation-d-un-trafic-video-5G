@@ -61,4 +61,3 @@ EOF
 
     sleep $INTERVAL
 done
-
