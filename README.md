@@ -1,4 +1,4 @@
-# Emulation-d-un-trafic-vidéo-5G
+# Emulation d'un trafic vidéo 5G
 NexSlice - Emulation d'un trafic vidéo 5G
 
 **Projet**: 2
@@ -6,9 +6,9 @@ NexSlice - Emulation d'un trafic vidéo 5G
 **Étudiants**: Tifenne Jupiter, Emilie Melis, Eya Walha  
 **Année**: 2025-2026
 
-## Introduction
+# Introduction
 
-### Contexte
+## Contexte
 
 La 5G introduit le **Network Slicing**, permettant de créer des réseaux virtuels logiques sur une infrastructure physique commune. Chaque slice peut être optimisé pour des cas d'usage spécifiques:
 
@@ -20,29 +20,29 @@ La 5G introduit le **Network Slicing**, permettant de créer des réseaux virtue
 
 ---
 
-## Objectifs
+# Objectifs
 
 Notre projet s'appuie sur l'infrastructure **NexSlice** ([lien GitHub](https://github.com/AIDY-F2N/NexSlice/tree/k3s)) qui fournit un Core 5G OAI complet déployé sur Kubernetes.
 L’objectif est de déployer un serveur vidéo (FFmpeg + nginx) sur Kubernetes et de réaliser des tests de streaming vidéo sur le slice eMBB (SST = 1). Cela permettra de mesurer les performances réseau (latence, débit, jitter), de capturer et d’analyser le trafic afin de confirmer le routage via l’UPF, et de mettre en place une supervision en temps réel avec Prometheus et Grafana. Cette supervision inclura la création de tableaux de bord pour visualiser les métriques 5G et l’automatisation de l’export de ces métriques vers Prometheus.
 
 ---
 
-## État de l'Art
+# État de l'Art
 
-### 1. Contexte général
+## 1. Contexte général
 
 Avec la 5G, le Network Slicing permet de découper le réseau en plusieurs tranches dédiées à différents usages (eMBB, URLLC, mMTC). Les outils classiques comme ping ou iperf3 mesurent surtout la latence ou le débit, mais ne reflètent pas vraiment le comportement réel d'applications comme le streaming vidéo HD.
 
 
 C'est pourquoi de nombreux travaux cherchent aujourd'hui à mieux émuler ou analyser un trafic vidéo réaliste, afin d'évaluer l'impact du slicing sur les performances et la qualité perçue par l'utilisateur.
 
-### 2. Expérimentations vidéo dans des environnements 5G
+## 2. Expérimentations vidéo dans des environnements 5G
 
 Des expérimentations récentes menées avec la pile OpenAirInterface (OAI) et des UEs virtuels montrent comment le débit, la latence et la stabilité vidéo interagissent, et proposent des méthodologies adaptées à des plateformes entièrement virtualisées comme NexSlice (source 1).
 
 D'autres démonstrations autour de la vidéosurveillance en temps réel mettent en avant la capacité du slicing à réduire la latence et stabiliser le flux, illustrant l'intérêt de cette approche pour des services exigeants comme les flux eMBB (source 7).
 
-### 3. Modélisation et estimation de la QoE
+## 3. Modélisation et estimation de la QoE
 
 Plusieurs travaux proposent des modèles reliant les métriques réseau (débit, latence, pertes) à la QoE, ce qui permet d'interpréter les performances du réseau du point de vue de l'utilisateur final (source 3).
 
@@ -50,25 +50,25 @@ D'autres recherches se focalisent sur la vidéo Ultra-HD, en utilisant des indic
 
 Des méthodes d'adaptation basées sur MPEG-DASH, associées à l'évaluation automatique de l'image, offrent également des pistes pour configurer efficacement des pipelines vidéo comme GStreamer dans un contexte eMBB (source 10).
 
-### 4. Adaptation dynamique et optimisation énergétique
+## 4. Adaptation dynamique et optimisation énergétique
 
 Des architectures intégrant la virtualisation des fonctions réseau montrent qu'il est possible d'adapter la qualité vidéo en tenant compte à la fois de la QoE et de la consommation énergétique. Ces approches s'inscrivent dans la même logique que NexSlice, qui cherche à orchestrer intelligemment les ressources selon la demande (source 2).
 
-### 5. Fiabilité et résilience du streaming en 5G
+## 5. Fiabilité et résilience du streaming en 5G
 
 Des études menées sur les réseaux à ondes millimétriques mettent en avant l'intérêt de la multi-connectivité et du network coding pour stabiliser le débit et réduire la variabilité du flux (source 6).
 
 D'autres analyses montrent aussi que la congestion dans la RAN influence directement la lecture vidéo (par exemple via QUIC), en provoquant des interruptions liées aux files d'attente radio — un phénomène qu'il est possible de reproduire dans un environnement émulé comme OAI/NexSlice (source 9).
 
-### 6. Slicing orienté QoE et isolation des services
+## 6. Slicing orienté QoE et isolation des services
 
 Certaines architectures récentes de RAN slicing sont conçues pour optimiser la QoE et garantir une isolation stricte entre services. Elles insistent sur la nécessité de corréler automatiquement les métriques réseau et les indicateurs de qualité perçue afin d'allouer les ressources au bon moment. Ce principe rejoint directement les objectifs du slice eMBB dans NexSlice (source 8).
 
-### 7. Apprentissage automatique et prédiction de la QoE
+## 7. Apprentissage automatique et prédiction de la QoE
 
 Des travaux s'appuyant sur le Machine Learning montrent qu'il est possible de prédire la QoE vidéo à partir de paramètres mesurés en temps réel (débit, gigue, rebuffering, pertes). Ces approches ouvrent la voie à une orchestration proactive du slicing, capable d'anticiper les besoins de qualité. Elles sont transférables au fonctionnement de NexSlice (source 4).
 
-### 8. Synthèse et positionnement
+## 8. Synthèse et positionnement
 
 L'ensemble des recherches met en évidence plusieurs tendances fortes :
 
@@ -81,9 +81,9 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 
 ---
 
-## Architecture
+# Architecture
 
-### Vue d'Ensemble
+## Vue d'Ensemble
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Infrastructure NexSlice (Fournie par le Prof)                        │
@@ -137,7 +137,7 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-### Composants Utilisés
+## Composants Utilisés
 
 | Composant | Technologie | Rôle |
 |-----------|-------------|------|
@@ -149,9 +149,8 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 | **Export Métriques** | Pushgateway | Interface entre scripts et Prometheus |
 | **Namespace** | `nexslice`, `monitoring` | Isolation des ressources K8s |
 
----
 
-### Fichier Vidéo de Test
+## Fichier Vidéo de Test
 
 - **URL**: http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
 - **Format**: MP4 (H.264 + AAC)
@@ -159,54 +158,147 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 - **Durée**: ~10 minutes
 
 ---
-### Déploiement 
+# Déploiement 
 
+## 1. Pré-requis dans les pods UERANSIM
 
-requis 
+Avant d’exécuter des scripts ou faire des tests réseau, installer les utilitaires nécessaires :
+
+```bash
 sudo k3s kubectl exec -it ueransim-ue1-ueransim-ues-64d67cf8bd-7lqjz -n nexslice -- apt update
 sudo k3s kubectl exec -it ueransim-ue1-ueransim-ues-64d67cf8bd-7lqjz -n nexslice -- apt install -y bc
+```
 
 
+## 2. Construction de l’image Docker du serveur vidéo (FFmpeg)
 
+Construire l’image :
+
+```bash
 sudo docker build -t ffmpeg-server:latest .
+```
+
+Vérifier que l’image existe :
+
+```bash
 sudo docker images | grep ffmpeg-server
+```
 
-vérifier si le cluster k3s est prêt : sudo k3s kubectl get nodes / sudo k3s kubectl get ns
+Si tu utilises le script d’automatisation :
 
+```bash
 chmod +x build_ffmpeg.sh
 ./build_ffmpeg.sh
+```
 
 
-Déployer le serveur 
+## 3. Vérification du cluster K3s
 
+S’assurer que le cluster est opérationnel :
+
+```bash
+sudo k3s kubectl get nodes
+sudo k3s kubectl get ns
+```
+
+
+## 4. Déploiement du serveur vidéo dans Kubernetes
+
+Déployer :
+
+```bash
 sudo k3s kubectl apply -f ffmpeg-server-deployment.yaml
+```
+
+Vérifier que les pods tournent :
+
+```bash
 sudo k3s kubectl get pods -n nexslice | grep ffmpeg
+```
+
+Consulter les logs :
+
+```bash
 sudo k3s kubectl logs -n nexslice ffmpeg-server -f
+```
 
-Test depuis un pod temporaire
 
+## 5. Test interne via un pod temporaire
+
+Créer un pod test et vérifier l’accès HTTP :
+
+```bash
 sudo k3s kubectl run test-client --image=ubuntu:22.04 -n nexslice -it --rm -- bash
+```
+
+Dans le pod test :
+
+```bash
 apt-get update && apt-get install -y curl
 curl -I http://ffmpeg-server.nexslice.svc.cluster.local:8080/videos/video.mp4
+```
 
-configuration de l’UE
+
+## 6. Configuration d’un UE UERANSIM
+
+Lister les pods UE :
+
+```bash
 sudo k3s kubectl get pods -n nexslice | grep ueransim-ue
-sudo k3s kubectl exec -it -n nexslice <nom-du-pod-ueransim-ue1> -- bash
+```
+
+Ouvrir un shell dans un UE :
+
+```bash
+sudo k3s kubectl exec -it -n nexslice <pod-ueransim-ue1> -- bash
+```
+
+Dans le pod :
+
+```bash
 apt-get update && apt-get install -y curl
 ip addr show uesimtun0
+```
 
-Emulation d'un flux vidéo 
 
+## 7. Émulation d’un flux vidéo depuis un UE
+
+Créer un dossier dans le pod UE :
+
+```bash
 sudo k3s kubectl exec -it <pod-ue> -n nexslice -- mkdir -p /home/ueransim
-sudo k3s kubectl cp stream_video.sh nexslice/<pod-ue>:/home/ueransim/stream_video.sh
-sudo k3s kubectl exec -it <pod-ue> -n nexslice -- chmod +x /home/ueransim/stream_video.sh
-sudo k3s kubectl exec -it <pod-ue> -n nexslice -- /home/ueransim/stream_video.sh
+```
 
-grafana : http://172.26.157.4:30300/
-promotheus : http://172.26.157.4:30090/
+Copier le script :
+
+```bash
+sudo k3s kubectl cp stream_video.sh nexslice/<pod-ue>:/home/ueransim/stream_video.sh
+```
+
+Rendre le script exécutable :
+
+```bash
+sudo k3s kubectl exec -it <pod-ue> -n nexslice -- chmod +x /home/ueransim/stream_video.sh
+```
+
+Lancer le streaming :
+
+```bash
+sudo k3s kubectl exec -it <pod-ue> -n nexslice -- /home/ueransim/stream_video.sh
+```
+
+
+## 8. Monitoring – Grafana & Prometheus
+
+* **Grafana**
+  [http://172.26.157.4:30300/](http://172.26.157.4:30300/)
+
+* **Prometheus**
+  [http://172.26.157.4:30090/](http://172.26.157.4:30090/)
+
 ---
 
-## Références
+# Références
 
 [1] Agarwal, B. et al. (2023). Analysis of real-time video streaming and throughput performance using the OpenAirInterface stack on multiple UEs. IEEE CSCN.
 
@@ -230,5 +322,7 @@ promotheus : http://172.26.157.4:30090/
 
 ---
 Ce projet est développé dans le cadre d'un projet académique à Telecom SudParis.
+
+
 
 
