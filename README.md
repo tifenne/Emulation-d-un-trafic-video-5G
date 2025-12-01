@@ -165,8 +165,8 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 Avant d’exécuter des scripts ou faire des tests réseau, installer les utilitaires nécessaires :
 
 ```bash
-sudo k3s kubectl exec -it ueransim-ue1-ueransim-ues-64d67cf8bd-7lqjz -n nexslice -- apt update
-sudo k3s kubectl exec -it ueransim-ue1-ueransim-ues-64d67cf8bd-7lqjz -n nexslice -- apt install -y bc
+sudo k3s kubectl exec -it <pod-ue> -n nexslice -- apt update
+sudo k3s kubectl exec -it <pod-ue> -n nexslice -- apt install -y bc
 ```
 
 
