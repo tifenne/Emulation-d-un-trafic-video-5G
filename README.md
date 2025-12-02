@@ -157,6 +157,20 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 - **Taille**: ~158 MB
 - **Durée**: ~10 minutes
 
+
+---
+# Expérimentation
+
+## 1. Résultats dans l’infrastructure NexSlice (Core 5G)
+
+Pour déployer la vidéo, nous avons testé 3 serveurs : 
+   	- **VLC server** : échec (server instable, pas de flux exploitable).
+  	- **GStreamer** : échec (problèmes de configuration, non finalisé).
+  	- **FFmpeg + nginx** : **succès**.
+
+**Conclusion  :**  
+- Serveur vidéo ffmpeg dockerisé fonctionnel dans NexSlice.  
+
 ---
 # Déploiement 
 
@@ -329,115 +343,29 @@ video_chunk_jitter_seconds{ue="ue1"}
 * Ajuster axes et style, puis enregistrer.
 
 ---
-## Résultats
+# Résultat
 
-### 1. Résultats dans l’infrastructure NexSlice (Core 5G du prof)
+- Script de streaming incrémental fonctionnel côté UE (avec CSV local pour la collecte des métriques).  
+- Export automatique des métriques vers Prometheus et Grafana opérationnel.
 
-Cette partie s’appuie sur l’infra NexSlice (Core OAI + UERANSIM) fournie dans le TP.  
+—-
+# Notes
 
+En mode “standalone” (sans infra NexSlice)
 
-#### 1.1. Serveur vidéo et routage via le slice eMBB
-
-Objectif : prouver qu’un flux vidéo HTTP passe bien par le tunnel 5G (interface `uesimtun0`) et donc par l’UPF et le slice eMBB (SST=1).
-
-- Tentatives de serveur vidéo :
-  - **VLC server** : échec (server instable, pas de flux exploitable).
-  - **GStreamer** : échec (problèmes de configuration, non finalisé).
-  - **FFmpeg + nginx** : **succès**.
-- Mise en place :
-  - Déploiement d’un pod `ffmpeg-server` dans le namespace `nexslice` servant un fichier `video.mp4` via HTTP (`/videos/video.mp4`)
-  - Vérification que la vidéo est bien présente dans le pod (`ls /usr/share/nginx/html`).
-- Vérification du routage 5G :
-  - Lancement de `tcpdump` sur l’interface **`uesimtun0`** du pod UE (UERANSIM).
-  - Téléchargement de la vidéo via :  
-    `curl --interface uesimtun0 http://ffmpeg-server.nexslice.svc.cluster.local:8080/videos/video.mp4`
-  - Observation dans `tcpdump` de paquets IP avec :
-    - IP source = **12.1.1.2** (UE)
-    - IP destination = serveur vidéo
-    - trafic HTTP visible en **aller/retour** 
-
-➡ **Conclusion :**  
-Le flux vidéo passe bien par le tunnel 5G (`uesimtun0`) et donc par le slice eMBB configuré dans l’UE (SST=1). Le routage via l’UPF est confirmé.
-
----
-
-#### 1.2. Dockerisation du serveur FFmpeg + script de streaming incrémental
-
-Objectif : industrialiser le serveur vidéo et commencer à mesurer des métriques côté UE.
-
-- Création d’une image Docker `ffmpeg-server:latest` :
-  - Dockerfile Ubuntu 22.04 installant `ffmpeg`, `nginx`, `wget`, `curl`.
-  - Téléchargement automatique d’une vidéo (ex. *ElephantsDream.mp4*) vers `/var/www/html/videos/video.mp4`. 
-  - Nginx configuré pour servir `http://…:8080/videos/video.mp4`.
-- Script `build_ffmpeg.sh` :
-  - `docker build …`
-  - `docker save …` puis `k3s ctr image import …` pour rendre l’image disponible dans k3s.
-- Déploiement dans k3s :
-  - `ffmpeg-server-deployment.yaml` (Deployment + Service `ClusterIP` sur le port 8080).
-  - Test depuis un pod client :  
-    `curl -I http://ffmpeg-server.nexslice.svc.cluster.local:8080/videos/video.mp4` → HTTP 200 OK. 
-
-- Script UE `stream_video.sh` :
-  - Télécharge la vidéo **par chunks** (ex. 1 Mo) via HTTP.
-  - Mesure à chaque chunk :
-    - **latence** du chunk,
-    - **débit** estimé,
-    - **jitter** (variation de latence entre chunks),
-    - enregistre les valeurs dans un CSV local (`/tmp/video_metrics.csv`).  
-  - Une première version prévoyait l’envoi de ces métriques vers **Pushgateway** (Prometheus), mais cette partie n’a pas été finalisée de manière stable.
-
-➡ **Conclusion  :**  
-- Serveur vidéo dockerisé fonctionnel dans NexSlice.  
-- Script de streaming incrémental fonctionnel côté UE (avec CSV local).  
-- L’export automatique des métriques vers Prometheus n’a pas été stabilisé (problèmes lors des réinstallations de l’infra).
-
----
-
-### 2. Résultats en mode “standalone” (sans infra NexSlice)
-
-En fin de projet, l’infrastructure NexSlice n’était plus entièrement opérationnelle chez nous (problèmes de Core / UPF et d’accès à l’UE). Pour conserver une démonstration fonctionnelle, nous avons ajouté un mode **standalone** exécuté sur machine locale (macOS).
+En fin de projet, l’infrastructure NexSlice n’était plus entièrement opérationnelle (problèmes de Core / UPF et d’accès à l’UE). Pour conserver une démonstration fonctionnelle, nous avons ajouté un mode **standalone** exécuté sur machine locale (macOS).
 
 Ce mode ne passe **pas** par la 5G ni par NexSlice, mais reprend la **même logique de scripts** pour :
 
-- tester la connectivité réseau de base,
-- télécharger une vidéo HTTP,
-- mesurer latence / jitter / stats interface.
+- tester la connectivité réseau de base : `scripts/test-connectivity-standalone.sh`  
+- télécharger une vidéo HTTP : `scripts/test-video-streaming-standalone.sh`  
+- mesurer latence / jitter / stats interface : `scripts/measure-performance-standalone.sh`.
 
-#### 2.1. Scripts standalone
-
-- `scripts/test-connectivity-standalone.sh`  
-  - Vérifie l’interface locale (ex. `en0`), récupère son IP.  
-  - Teste un ping vers la passerelle par défaut.  
-  - Teste un ping vers un IP externe (`8.8.8.8`) pour vérifier l’accès Internet.
-
-- `scripts/test-video-streaming-standalone.sh`  
-  - Télécharge une vidéo HTTP (BigBuckBunny) via l’interface locale.  
-  - Enregistre :
-    - le fichier vidéo (`results/video_<timestamp>.mp4`)
-    - les métriques `curl` (temps total, vitesse moyenne, code HTTP) dans `results/curl_metrics_<timestamp>.txt`.
-
-- `scripts/measure-performance-standalone.sh`  
-  - Envoie une série de pings vers la passerelle.  
-  - Calcule :
-    - **latence moyenne** (RTT avg),
-    - **jitter** (stddev),
-    - **perte de paquets**.  
-  - Sauvegarde :
-    - la sortie brute de `ping` dans `results/performance/ping_<timestamp>.txt`  
-    - les stats interface (`ifconfig` + `netstat`) dans `results/performance/interface_stats_<timestamp>.txt`.
-
-#### 2.2. Interprétation des résultats standalone
-
-- Ces tests montrent que :
+Ces tests montrent que :
   - la machine a bien accès à Internet,
   - la vidéo HTTP est correctement téléchargée,
   - on peut calculer des métriques réseau de base (RTT, jitter, pertes, débit HTTP) sur **une interface locale**.
-- **Important (académique) :**
-  - les résultats standalone **ne mesurent pas la QoS 5G**,  
-  - ils servent uniquement :
-    - de **démo fonctionnelle** quand l’infra NexSlice n’est pas disponible,  
-    - et de preuve que la chaîne de scripts (connectivité + streaming + mesures) fonctionne, et peut être branchée sur un tunnel 5G dès que l’infra est de nouveau up.
-
+    
 ---
 
 # Références
