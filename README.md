@@ -83,7 +83,7 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 
 # Architecture
 
-## Vue d'Ensemble
+## 1. Vue d'Ensemble
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
 │ Infrastructure NexSlice (Fournie par le Prof)                        │
@@ -137,7 +137,7 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-## Composants Utilisés
+## 2. Composants Utilisés
 
 | Composant | Technologie | Rôle |
 |-----------|-------------|------|
@@ -150,7 +150,7 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 | **Namespace** | `nexslice`, `monitoring` | Isolation des ressources K8s |
 
 
-## Fichier Vidéo de Test
+## 3. Fichier Vidéo de Test
 
 - **URL**: http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
 - **Format**: MP4 (H.264 + AAC)
@@ -164,9 +164,9 @@ Le projet NexSlice s'inscrit pleinement dans cette dynamique. En intégrant un t
 ## 1. Résultats dans l’infrastructure NexSlice (Core 5G)
 
 Pour déployer la vidéo, nous avons testé 3 serveurs : 
-   	- **VLC server** : échec (server instable, pas de flux exploitable).
-  	- **GStreamer** : échec (problèmes de configuration, non finalisé).
-  	- **FFmpeg + nginx** : **succès**.
+- **VLC server** : échec (server instable, pas de flux exploitable).
+- **GStreamer** : échec (problèmes de configuration, non finalisé).
+- **FFmpeg + nginx** : **succès**.
 
 **Conclusion  :**  
 - Serveur vidéo ffmpeg dockerisé fonctionnel dans NexSlice.  
@@ -198,7 +198,7 @@ Vérifier que l’image existe :
 sudo docker images | grep ffmpeg-server
 ```
 
-Si tu utilises le script d’automatisation :
+Pour le script d’automatisation :
 
 ```bash
 chmod +x build_ffmpeg.sh
@@ -301,10 +301,10 @@ Lancer le streaming :
 sudo k3s kubectl exec -it <pod-ue> -n nexslice -- /home/ueransim/stream_video.sh
 ```
 
+<img width="1081" height="182" alt="Capture d&#39;écran 2025-11-30 181143" src="https://github.com/user-attachments/assets/ed8bb421-72cd-4a06-beaa-33bc670b865a" />
 
-## 8. Monitoring – Grafana & Prometheus
 
-### Visualiser les métriques dans Grafana
+## 8. Monitoring – Prometheus & Grafana 
 
 1. **Port-forward Prometheus & Grafana**
 
@@ -341,6 +341,9 @@ video_chunk_jitter_seconds{ue="ue1"}
 ```
 
 * Ajuster axes et style, puis enregistrer.
+  
+<img width="1710" height="894" alt="Capture d&#39;écran 2025-12-02 000122" src="https://github.com/user-attachments/assets/6d5bc9a3-418e-4db8-bafa-718bef8b6c89" />
+<img width="1713" height="907" alt="Capture d&#39;écran 2025-12-02 000330" src="https://github.com/user-attachments/assets/a2c56765-d9b6-4ca0-a9c1-d1e2bb8d77ec" />
 
 ---
 # Résultat
@@ -348,7 +351,7 @@ video_chunk_jitter_seconds{ue="ue1"}
 - Script de streaming incrémental fonctionnel côté UE (avec CSV local pour la collecte des métriques).  
 - Export automatique des métriques vers Prometheus et Grafana opérationnel.
 
-—-
+---
 # Notes
 
 En mode “standalone” (sans infra NexSlice)
